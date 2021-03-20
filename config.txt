@@ -6,10 +6,10 @@ s5d2 =
 s6d1 = #ProDOS_2_4.dsk
 s6d2 = 
 
-s7d1 = #../images/hd1.po
+s7d1 = ../../images/hd1.po
 s7d2 = blankdisk.po
 
-g_cfg_rom_path = ../roms/ROM3
+g_cfg_rom_path = ../../roms/ROM3
 g_cfg_host_read_only = 1
 g_limit_speed = 0
 
