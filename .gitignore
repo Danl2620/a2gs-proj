@@ -1,0 +1,6 @@
+*.zip
+bin/
+merlin_s
+src/main_Output.txt
+src/_FileInformation.*
+src/main
