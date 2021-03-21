@@ -1,6 +1,7 @@
 
 ; TODO 
-; - turn io addresses into labels
+; + turn io addresses into labels
+; - turn keyboard io address into labels
 ; - simplify drawchar
 ; - try 80 column mode
 ; - draw cursor
@@ -22,6 +23,19 @@ TXTSET         equ   $00C051        ; select text mode only. "only"?
 TXTPAGE1       equ   $00C054        ; select text page 1 (there are 2)
 LORES          equ   $00C056        ; select "low res" graphics
 
+;; key codes
+KEY_UP         equ   #$8B
+KEY_DOWN       equ   #$8A
+KEY_LEFT       equ   #$88
+KEY_RIGHT      equ   #$95
+KEY_BACKSPACE  equ   #$FF
+KEY_RETURN     equ   #$8D
+
+;; char codes
+CHAR_SPACE     equ   #$A0
+
+;;
+COL_LAST       equ   #39
 
                rel
                typ   $B3
@@ -58,6 +72,7 @@ LORES          equ   $00C056        ; select "low res" graphics
 ; read keyboard then hit strobe to reset
                ldx   #0
                ldy   #0
+               jsr   drawpos
                ldal  KBDDOWNCLEAR
 
 ;;
@@ -70,26 +85,32 @@ LORES          equ   $00C056        ; select "low res" graphics
                bmi   :kjump
                jmp   :kloop
 
+
 :kjump         jsr   keydown
                jsr   drawpos
                jmp   :kloop
 
-keydown        cmp   #$8B           ; up
+;;
+;  switch based on key press
+;;
+
+keydown        cmp   KEY_UP
                beq   up
-               cmp   #$8A           ; down
+               cmp   KEY_DOWN
                beq   down
-               cmp   #$88           ; left
+               cmp   KEY_LEFT
                beq   left
-               cmp   #$95           ; right
+               cmp   KEY_RIGHT
                beq   right
-               cmp   #$FF           ; backspace
+               cmp   KEY_BACKSPACE
                beq   backspace
-               cmp   #$8D           ; return
+               cmp   KEY_RETURN
                beq   return
+
                jsr   drawchar
                jmp   colinc
 
-finkey         ldal  $00C010        ; clear strobe bit
+finkey         ldal  KBDDOWNCLEAR   ; clear strobe bit
                lda   #0
                rts
 
@@ -108,26 +129,29 @@ left           cpx   #0
                dex
                jmp   finkey
 
-right          cpx   #39
+right          cpx   COL_LAST
                beq   ping
-               jmp   *+2
-
-colinc         cpx   #39
-               beq   :rolcol
                inx
                jmp   finkey
 
-:rolcol        ldx   #0
+return         ldx   #0             ; carriage return
                jmp   down
-return         ldx   #0
-               jmp   down
-backspace      lda   #$A0
+
+backspace      lda   CHAR_SPACE
                cpx   #0
                beq   :contbs
                dex
 :contbs        jsr   drawchar
                jmp   finkey
 
+
+colinc         cpx   COL_LAST
+               beq   :rolcol
+               inx
+               jmp   finkey
+
+:rolcol        ldx   #0
+               jmp   down
 
 ping           pha
                ldal  SPEAKER
@@ -266,6 +290,8 @@ tencount       ldx   #0
 :subout        rts
 
                jsl   PRODOS16
+
+
 
 
 
