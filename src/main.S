@@ -1,5 +1,5 @@
 
-; TODO 
+; TODO
 ; + turn io addresses into labels
 ; - turn keyboard io address into labels
 ; - simplify drawchar
@@ -7,6 +7,7 @@
 ; - draw cursor
 ; - look at cowlark's vi for ideas
 
+OMF16          equ   $B3
 SPEAKER        equ   $00C030
 PRODOS16       equ   $E100A8
 
@@ -32,13 +33,16 @@ KEY_BACKSPACE  equ   #$FF
 KEY_RETURN     equ   #$8D
 
 ;; char codes
+CHAR_BLOCK     equ   #$20
 CHAR_SPACE     equ   #$A0
+CHAR_COMMA     equ   #$AC
 
-;;
+;; format
 COL_LAST       equ   #39
+STATUS_POS      equ $0007ED
 
                rel
-               typ   $B3
+               typ   OMF16
                dsk   main.l
 
 ; ensure 16-bit mode (unnecessary?)
@@ -160,28 +164,46 @@ ping           pha
 
 drawpos        pha
                phx
-                                    ; draw the parens and comma
+
+
+            ;; first block out the last line
+               phx
+               ldx   #$0
+               lda   CHAR_BLOCK
+
+drawpos_l      stal  #$0007D0,x
+               inx
+               cpx   COL_LAST + 1
+               bcc   drawpos_l
+               plx
+
+               ;; draw the parens and comma
                lda   #"("
-               stal  $0007F1
-               lda   #$AC
-               stal  $0007F4
+               stal  STATUS_POS + 1
+               lda   CHAR_COMMA
+               stal  STATUS_POS + 4
                lda   #")"
-               stal  $0007F7
+               stal  STATUS_POS + 7
+
+               ;; draw x pos
                txa
                jsr   tencount
                adc   #$B0
-               stal  $0007F3
+               stal  STATUS_POS + 3
                txa
                adc   #$B0
-               stal  $0007F2
+               stal  STATUS_POS + 2
+
+               ;; draw y pos
                tya
                jsr   tencount
                adc   #$B0
-               stal  $0007F6
+               stal  STATUS_POS + 6
                txa
                adc   #$B0
-               stal  $0007F5
-                                    ; restore x and original keydown char
+               stal  STATUS_POS + 5
+
+               ;; restore x and original keydown char
                plx
                pla
                rts
@@ -280,6 +302,10 @@ drawchar       cpy   #0
 :row22         stal  $000750,X
                rts
 
+;;
+;  do some BCD
+;;
+
 tencount       ldx   #0
 :substart      clc
                cmp   #10
@@ -290,6 +316,9 @@ tencount       ldx   #0
 :subout        rts
 
                jsl   PRODOS16
+
+
+
 
 
 
