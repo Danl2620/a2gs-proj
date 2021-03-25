@@ -1,10 +1,10 @@
 
 ; TODO
 ; + turn io addresses into labels
-; - turn keyboard io address into labels
+; + turn keyboard io address into labels
+; - draw cursor
 ; - simplify drawchar
 ; - try 80 column mode
-; - draw cursor
 ; - look at cowlark's vi for ideas
 
 OMF16          equ   $B3
@@ -25,6 +25,7 @@ TXTPAGE1       equ   $00C054        ; select text page 1 (there are 2)
 LORES          equ   $00C056        ; select "low res" graphics
 
 ;; key codes
+KEY_ESCAPE     equ   #$9B
 KEY_UP         equ   #$8B
 KEY_DOWN       equ   #$8A
 KEY_LEFT       equ   #$88
@@ -36,14 +37,17 @@ KEY_RETURN     equ   #$8D
 CHAR_BLOCK     equ   #$20
 CHAR_SPACE     equ   #$A0
 CHAR_COMMA     equ   #$AC
+CHAR_CURSOR    equ   #$FF
 
 ;; format
 COL_LAST       equ   #39
-STATUS_POS      equ $0007ED
+STATUS_POS     equ $0007ED
 
                rel
                typ   OMF16
                dsk   main.l
+
+; CHARACTER_UNDER_CURSOR DS 1
 
 ; ensure 16-bit mode (unnecessary?)
                clc
@@ -87,6 +91,15 @@ STATUS_POS      equ $0007ED
                ldal  KBDDATASTROBE  ; grab key pressed and strobe bit
                bit   #%1            ; xfer strobe bit to carry bit
                bmi   :kjump
+
+               ;; blink a cursor
+            ;;    sta >CHARACTER_UNDER_CURSOR
+            ;;    lda CHAR_BLOCK
+            ;;    jsr drawchar
+
+            ;;    lda >CHARACTER_UNDER_CURSOR
+            ;;    jsr drawchar
+
                jmp   :kloop
 
 
@@ -98,7 +111,9 @@ STATUS_POS      equ $0007ED
 ;  switch based on key press
 ;;
 
-keydown        cmp   KEY_UP
+keydown        cmp   KEY_ESCAPE
+               beq   DONE
+               cmp   KEY_UP
                beq   up
                cmp   KEY_DOWN
                beq   down
@@ -113,6 +128,16 @@ keydown        cmp   KEY_UP
 
                jsr   drawchar
                jmp   colinc
+
+DONE           jsl   PRODOS16
+               da    $29
+               adrl  QuitParm
+               bcs   Error
+
+Error          brk
+
+QuitParm       adrl  $0000
+               da    $00
 
 finkey         ldal  KBDDOWNCLEAR   ; clear strobe bit
                lda   #0
@@ -316,34 +341,3 @@ tencount       ldx   #0
 :subout        rts
 
                jsl   PRODOS16
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
