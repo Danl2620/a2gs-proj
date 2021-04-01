@@ -86,7 +86,7 @@ HelloStr	str 'HELLO KANSASFEST'
 ;; GraphicsOn()
 GraphicsOn
 	sep #$30	;8-bit mode
-	lda VIDEO_SHR + VIDEO_BANK_LATCH
+	lda VIDEO_SHR + VIDEO_BANK_LATCH ; really prefer a const IOR here
 	stal NEWVIDEOREG	;Turn on SHR mode
 	rep #$30	;back to 16-bit mode
 	rts
