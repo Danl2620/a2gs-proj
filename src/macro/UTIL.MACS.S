@@ -7,6 +7,13 @@
 * All Rights Reserved
 *-------------------------------------------------
 
+;; mask peculiar to the font drawing
+MASK MAC
+ lda ]1,y
+ oral ]2,x
+ stal ]2,x
+ <<<
+
 PHWL MAC
  PHW ]1
  PHL ]2
