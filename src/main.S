@@ -132,7 +132,6 @@ keydown        cmp   KEY_ESCAPE
 DONE           jsl   PRODOS16
                da    $29
                adrl  QuitParm
-               bcs   Error
 
 Error          brk
 
@@ -191,8 +190,7 @@ drawpos        pha
                phx
 
 
-            ;; first block out the last line
-               phx
+               ;; draw the status line inverse
                ldx   #$0
                lda   CHAR_BLOCK
 
@@ -200,7 +198,6 @@ drawpos_l      stal  #$0007D0,x
                inx
                cpx   COL_LAST + 1
                bcc   drawpos_l
-               plx
 
                ;; draw the parens and comma
                lda   #"("
@@ -326,6 +323,28 @@ drawchar       cpy   #0
                rts
 :row22         stal  $000750,X
                rts
+
+;;
+;  print a string
+;;
+
+
+print          ldy   #$01        ;; start 1 past return address
+loop           lda   (1,s),y     ;; get a char to print
+               beq   fix
+               jsr   cout
+               iny
+               bra   loop
+
+fix            sty   len
+               lda   1,s
+               adc   len
+               sta   1,s
+
+               lda   2,s
+               adc   #0
+               sta   2,s
+DONE           rts
 
 ;;
 ;  do some BCD
