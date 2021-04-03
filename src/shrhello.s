@@ -78,7 +78,7 @@ QuitParm
 	adrl $0000	; pointer to pathname (not used here)
 	da $00	; quit type (absolute quite)
 
-HelloStr	str 'HELLO KANSASFEST'
+HelloStr	str 'HELLO SUPER HIGH-RES!'
 
 ****************************************
 * Turn on SHR mode                     *
