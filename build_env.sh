@@ -31,4 +31,4 @@ cd -
 # Cleanup
 rm *.zip
 rm -rf cadius_s
-rm -rf merlin_s
+##rm -rf merlin_s

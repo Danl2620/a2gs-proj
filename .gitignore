@@ -5,3 +5,5 @@ src/*_Output.txt
 src/_FileInformation.*
 src/main
 src/SHRHELLO
+.DS_Store
+*.rkt~

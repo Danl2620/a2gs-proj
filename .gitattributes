@@ -1,0 +1,4 @@
+blankdisk.po filter=lfs diff=lfs merge=lfs -text
+docs/Apple_IIgs_GSOS_internals_v1.pdf filter=lfs diff=lfs merge=lfs -text
+docs/Programmanual.pdf filter=lfs diff=lfs merge=lfs -text
+docs/AppleIIgsHardwareReferenceManual.PDF filter=lfs diff=lfs merge=lfs -text
