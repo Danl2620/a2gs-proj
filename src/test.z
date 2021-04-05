@@ -1,0 +1,27 @@
+const Size = struct {
+    w: i16, h: i16
+};
+
+const RB = struct {
+    start: *u8, size: Size, stride: i16, bpp: i8
+};
+
+const p = Point{ .x = 1234, .y = 0.34 };
+
+const shr_screen_320 = RB {
+    .start = 0x12000,
+    .size = Size{ .w = 320, .h = 200 },
+    .bpp = 4
+};
+
+const shr_screen_640 = RB {
+    .start = 0x12000,
+    .size = Size{ .w = 640, .h = 200 },
+    .bpp = 2
+};
+
+const font_table = struct {
+    //character: [_]rb,
+    page: rb,
+    offset: s16
+};

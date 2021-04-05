@@ -66,6 +66,11 @@ const RB = struct {
   size: Size,
   stride: i16,
   bpp: i8
+
+  pub fn create(start: *u8, size: Size, bpp: i8) RB
+  {
+    return RB { .start = start, .size = size, .stride = size.w, .bpp = bpp };
+  }
 };
 
 (define shr-screen-320
