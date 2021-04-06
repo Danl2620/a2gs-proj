@@ -1,12 +1,21 @@
 const Size = struct {
-    w: i16, h: i16
+    w: i16,
+    h: i16
+};
+
+const Vec2 = struct {
+    x: i16,
+    y: i16
 };
 
 const RB = struct {
-    start: *u8, size: Size, stride: i16, bpp: i8
+    start: *u8,
+    size: Size,
+    stride: i16,
+    bpp: i8
 };
 
-const p = Point{ .x = 1234, .y = 0.34 };
+const p = Vec2 { .x = 1234, .y = 34 };
 
 const shr_screen_320 = RB {
     .start = 0x12000,
@@ -25,3 +34,39 @@ const font_table = struct {
     page: rb,
     offset: s16
 };
+
+// in text modes
+const screen_color_register = struct {
+    text_color: u4,
+    back_color: u4
+};
+
+// in all modes
+const border_color_register = struct {
+    rtc: u4,               // read only!
+    border_color: u4
+};
+
+const video_register = struct {
+    shr_mode: u1,
+    linear_shr_mem: u1,
+    bw_mode: u1,
+    reserved: u4,
+    ignore_bank_latch: u1
+};
+
+const palette_entry = struct {
+    green: u4,
+    blue: u4,
+    red: u4,
+    reserver: u4
+};
+
+const scanline_control_bytes = struct {
+    horiz_res: u1,
+    gen_interrupt: u1,
+    color_fill_mode: u1,
+    reserver_0: u1,
+    palette_index: u4
+};
+
