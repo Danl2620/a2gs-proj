@@ -13,7 +13,12 @@
   )
 
 
-(define-tokens value-tokens (INT-LITERAL FLOAT-LITERAL IDENTIFIER STRING))
+(define-tokens value-tokens
+  (INT-LITERAL
+   FLOAT-LITERAL
+   IDENTIFIER
+   STRING
+   INT-CUSTOM-PRECISION))
 (define-empty-tokens op-tokens (newline = OP CP OB CB CONST
                                         STRUCT ENUM UNION
                                         COLON SEMICOLON
@@ -67,6 +72,11 @@
    [(:or "=" "+" "-" "*" "/" "%" "&&" "==" "!=" ">=" "<=" ">" "<") (string->symbol lexeme)]
   
    [numeric-type (string->symbol lexeme)]
+
+   ;; arbitrary bit integers
+   [(:: #\u (:+ digit)) (token-INT-CUSTOM-PRECISION (string->symbol lexeme))]
+   [(:: #\i (:+ digit)) (token-INT-CUSTOM-PRECISION (string->symbol lexeme))]
+   
    ["bool" 'BOOL]
    
    [(:: (:or upper-letter lower-letter)
@@ -165,21 +175,21 @@
    ))
 
 (define type/p
-  (syntax/p
-   (or/p (do (token/p '*) [type <- type/p] (pure (list 'pointer type)))
-         (do (try/p (token/p 'f32)) (pure f32))
-         ;;(do (token/p 'f64) (pure f64))
-         (do (token/p 'i8) (pure i8))
-         (do (token/p 'i16) (pure i16))
-         (do (token/p 'i32) (pure i32))
-         (do (token/p 'i64) (pure i64))
-         (do (token/p 'u8)  (pure u8))
-         (do (token/p 'u16) (pure u16))
-         (do (token/p 'u32) (pure u32))
-         (do (token/p 'u64) (pure u64))
-         (do (token/p 'BOOL) (pure 'bool))
-         (do [name <- identifier/p] (pure (list 'type-ref name)))
-         )))
+  (or/p (do (token/p '*) [type <- type/p] (pure (list 'pointer type)))
+        (do (try/p (token/p 'f32)) (pure f32))
+        ;;(do (token/p 'f64) (pure f64))
+        (do (token/p 'i8) (pure i8))
+        (do (token/p 'i16) (pure i16))
+        (do (token/p 'i32) (pure i32))
+        (do (token/p 'i64) (pure i64))
+        (do (token/p 'u8)  (pure u8))
+        (do (token/p 'u16) (pure u16))
+        (do (token/p 'u32) (pure u32))
+        (do (token/p 'u64) (pure u64))
+        (do [n <- (token/p 'INT-CUSTOM-PRECISION)] (pure n))
+        (do (token/p 'BOOL) (pure 'bool))
+        (do [name <- identifier/p] (pure (list 'type-ref name)))
+        ))
 
 (struct ast-lhs
   (mutable
@@ -190,33 +200,37 @@
   )
 
 (define lhs/p
-  (syntax/p
-   (do [mut <- (or/p (do (try/p (token/p 'CONST)) (pure #f))
-                     (do void/p (pure #t)))]
-     (name <- identifier/p)
-     [type <- (or/p (do (token/p 'COLON)
-                      [type <- type/p]
-                      (pure type))
-                    (do void/p (pure #f)))]
-     (pure (ast-lhs mut name type))
-     )))
+  (do [mut <- (or/p (do (try/p (token/p 'CONST)) (pure #f))
+                    (do void/p (pure #t)))]
+    (name <- identifier/p)
+    [type <- (or/p (do (token/p 'COLON)
+                     [type <- type/p]
+                     (pure type))
+                   (do void/p (pure #f)))]
+    (pure (ast-lhs mut name type))
+    ))
+
+(struct ast-struct-field (name type)
+  #:transparent)
 
 (define field/p
-  (syntax/p
-   (do [name <- identifier/p]
-     (token/p 'COLON)
-     [type <- type/p]
-     (pure (list name type))
-     )))
+  (do [name <- identifier/p]
+    (token/p 'COLON)
+    [type <- type/p]
+    (pure (ast-struct-field name type))
+    ))
+
+(struct ast-struct
+  (fields)
+  #:transparent)
 
 (define struct/p
-  (syntax/p
-   (do (token/p 'STRUCT)
-     (token/p 'OB)
-     [fields <- (many/p field/p #:sep (token/p 'COMMA))]
-     (token/p 'CB)
-     (pure (list* 'struct fields))
-     )))
+  (do (token/p 'STRUCT)
+    (token/p 'OB)
+    [fields <- (many/p field/p #:sep (token/p 'COMMA))]
+    (token/p 'CB)
+    (pure (ast-struct fields))
+    ))
 
 (define enum/p
   (syntax/p
@@ -236,30 +250,38 @@
      (pure (list 'union entries))
      )))
 
+(struct ast-field-initializer
+  (name
+   value)
+  #:transparent)
+
 (define field-instance/p
-  (syntax/p
-   (do (token/p 'DOT)
-     [name <- identifier/p]
-     (token/p 'EQUALS)
-     [value <- (or/p number/p struct-instance/p)]
-     (pure (list 'assign name value))
-     )))
+  (do (token/p 'DOT)
+    [name <- identifier/p]
+    (token/p 'EQUALS)
+    [value <- (or/p number/p struct-instance/p)]
+    (pure (ast-field-initializer name value))
+    ))
+
+(struct ast-struct-instance
+  (type
+   field-initializers)
+  #:transparent
+  )
 
 (define struct-instance/p
-  (syntax/p
-   (do [type <- identifier/p]
-     (token/p 'OB)
-     [fields <- (many/p field-instance/p #:sep (token/p 'COMMA))]
-     (token/p 'CB)
-     (pure (list 'struct-instance (list 'type type) fields))
-     )))
+  (do [type <- identifier/p]
+    (token/p 'OB)
+    [field-initializers <- (many/p field-instance/p #:sep (token/p 'COMMA))]
+    (token/p 'CB)
+    (pure (ast-struct-instance type field-initializers))
+    ))
 
 (define value/p
-  (syntax/p
-   (or/p struct-instance/p
-         number/p
-         (token/p 'STRING)
-         )))
+  (or/p struct-instance/p
+        (syntax/p number/p)
+        (syntax/p (token/p 'STRING))
+        ))
 
 (struct ast-definition
   (lhs
@@ -269,13 +291,12 @@
   )
 
 (define definition/p
-  (syntax/p
-   (do [name <- lhs/p]
-     (token/p 'EQUALS)
-     [value <- (or/p struct/p enum/p union/p value/p)]
-     (token/p 'SEMICOLON)
-     (pure (ast-definition name value))
-     )))
+  (do [name <- lhs/p]
+    (token/p 'EQUALS)
+    [value <- (or/p struct/p enum/p union/p value/p)]
+    (token/p 'SEMICOLON)
+    (pure (ast-definition name value))
+    ))
 
 ;;(define function/p
 ;;)
@@ -284,12 +305,20 @@
 
 ; an expression can be a number or a function invokation
 (define expression/p
-  (or/p ;;number/p
-   ;;funcall/p
-   definition/p))
+  (syntax/p
+   (or/p ;;number/p
+    ;;funcall/p
+    definition/p)))
+
+(struct ast-module
+  (defs)
+  #:transparent
+  )
 
 (define body/p
-  (many/p definition/p))
+  (do [defs <- (many/p definition/p)]
+    (pure (ast-module defs))
+    ))
 
 (module+ test
   (define examples
@@ -341,5 +370,5 @@
      (parse-result! (parse-tokens expression/p (lex-zig-str str)))
      ))
 
-  (parse-result! (parse-tokens body/p (lex-zig-file "test.z")))
+  (parse-result! (parse-tokens body/p (lex-zig-file "test.z") "test.z"))
   )
