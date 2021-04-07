@@ -3,10 +3,10 @@ const Size = struct {
     h: i16
 };
 
-const Vec2 = struct {
-    x: i16,
-    y: i16
-};
+// const Vec2 = struct {
+//     x: i16,
+//     y: i16
+// };
 
 const RB = struct {
     start: *u8,
@@ -15,7 +15,36 @@ const RB = struct {
     bpp: i8
 };
 
-const p = Vec2 { .x = 1234, .y = 34 };
+fn min(v0: i16, v1: i16) -> i16
+{
+    if (v0 < v1)
+    {
+        return v0;
+    }
+    return v1;
+}
+
+fn blit_row(src: rb, dst: rb, offset: vec2, row: i16) 
+{
+    const width = min(src.size.w, dst.size.w);
+    for (var ii = 0; ii < width; ii += 1) 
+    {
+        dst.start[dst.stride*row + ii] = src.start[src.stride*row + ii];
+    }
+}
+
+fn blit(src: rb, dst: rb, offset: vec2) 
+{
+    var row: i16 = 0;
+    const rows: i16 = min(src.size.h, dst.size.h);
+    while (row < rows) {
+        blit_row(src, dst, offset, row);
+        row += 1;
+    }
+}
+
+
+// const p = Vec2 { .x = 1234, .y = 34 };
 
 const shr_screen_320 = RB {
     .start = 0x12000,
@@ -23,50 +52,50 @@ const shr_screen_320 = RB {
     .bpp = 4
 };
 
-const shr_screen_640 = RB {
-    .start = 0x12000,
-    .size = Size{ .w = 640, .h = 200 },
-    .bpp = 2
-};
+// const shr_screen_640 = RB {
+//     .start = 0x12000,
+//     .size = Size{ .w = 640, .h = 200 },
+//     .bpp = 2
+// };
 
-const font_table = struct {
-    //character: [_]rb,
-    page: rb,
-    offset: s16
-};
+// const font_table = struct {
+//     //character: [_]rb,
+//     page: rb,
+//     offset: s16
+// };
 
-// in text modes
-const screen_color_register = struct {
-    text_color: u4,
-    back_color: u4
-};
+// // in text modes
+// const screen_color_register = struct {
+//     text_color: u4,
+//     back_color: u4
+// };
 
-// in all modes
-const border_color_register = struct {
-    rtc: u4,               // read only!
-    border_color: u4
-};
+// // in all modes
+// const border_color_register = struct {
+//     rtc: u4,               // read only!
+//     border_color: u4
+// };
 
-const video_register = struct {
-    shr_mode: u1,
-    linear_shr_mem: u1,
-    bw_mode: u1,
-    reserved: u4,
-    ignore_bank_latch: u1
-};
+// const video_register = struct {
+//     shr_mode: u1,
+//     linear_shr_mem: u1,
+//     bw_mode: u1,
+//     reserved: u4,
+//     ignore_bank_latch: u1
+// };
 
-const palette_entry = struct {
-    green: u4,
-    blue: u4,
-    red: u4,
-    reserver: u4
-};
+// const palette_entry = struct {
+//     green: u4,
+//     blue: u4,
+//     red: u4,
+//     reserver: u4
+// };
 
-const scanline_control_bytes = struct {
-    horiz_res: u1,
-    gen_interrupt: u1,
-    color_fill_mode: u1,
-    reserver_0: u1,
-    palette_index: u4
-};
+// const scanline_control_bytes = struct {
+//     horiz_res: u1,
+//     gen_interrupt: u1,
+//     color_fill_mode: u1,
+//     reserver_0: u1,
+//     palette_index: u4
+// };
 

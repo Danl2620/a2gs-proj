@@ -19,17 +19,25 @@
    IDENTIFIER
    STRING
    INT-CUSTOM-PRECISION))
-(define-empty-tokens op-tokens (newline = OP CP OB CB CONST
-                                        STRUCT ENUM UNION
+(define-empty-tokens op-tokens (newline =
+                                        OP CP
+                                        OB CB
+                                        OSB CSB
+                                        CONST
+                                        STRUCT ENUM UNION FN
+                                        IF FOR RETURN
                                         COLON SEMICOLON
                                         COMMA EQUALS
                                         DOT
                                         + - * / ^ EOF NEG
+                                        < > <= >= !=
 
                                         f32 f64
                                         i8 i16 i32 i64
                                         u8 u16 u32 u64
-                                        BOOL))
+                                        BOOL
+
+                                        ARROW))
 
 
 
@@ -59,15 +67,29 @@
    [#\, (token-COMMA)]
    [#\{ 'OB]
    [#\} 'CB]
+   (#\[ 'OSB)
+   (#\] 'CSB)
    ["const" 'CONST]
    ["struct" 'STRUCT]
    ["enum" 'ENUM]
    ["union" 'UNION]
+   ("fn" 'FN)
+   ("if" 'IF)
+   ("for" 'FOR)
+   ("return" 'RETURN)
    [#\: 'COLON]
    [#\; 'SEMICOLON]
    [#\, 'COMMA]
    [#\= 'EQUALS]
    [#\. 'DOT]
+
+   (#\< '<)
+   (#\> '>)
+   ((:: #\< #\=) '<=)
+   ((:: #\> #\=) '>=)
+   ((:: #\! #\=) '!=)
+   
+   ("->" 'ARROW)
    ((:: #\" string0 #\") (token-STRING (string-trim lexeme "\"")))
    [(:or "=" "+" "-" "*" "/" "%" "&&" "==" "!=" ">=" "<=" ">" "<") (string->symbol lexeme)]
   
@@ -126,6 +148,16 @@
 
 (define identifier/p
   (syntax/p (token/p 'IDENTIFIER)))
+
+(define operator/p
+  (or/p (token/p '<)
+        (token/p '>)
+        (token/p '<=)
+        (token/p '>=)
+        (token/p '!=)
+        ))
+
+
 
 
 ; a simple function invokation
@@ -278,9 +310,10 @@
     ))
 
 (define value/p
-  (or/p struct-instance/p
-        (syntax/p number/p)
+  (or/p (syntax/p number/p)
+        (syntax/p identifier/p)
         (syntax/p (token/p 'STRING))
+        struct-instance/p
         ))
 
 (struct ast-definition
@@ -293,22 +326,94 @@
 (define definition/p
   (do [name <- lhs/p]
     (token/p 'EQUALS)
-    [value <- (or/p struct/p enum/p union/p value/p)]
+    [value <- (or/p expression/p struct/p enum/p union/p value/p)]
     (token/p 'SEMICOLON)
     (pure (ast-definition name value))
     ))
 
-;;(define function/p
-;;)
+(struct ast-function
+  (name params type body)
+  #:transparent)
 
+(define function/p
+  (do (token/p 'FN)
+    [name <- identifier/p]
+    (token/p 'OP)
+    [params <- (many/p field/p #:sep (token/p 'COMMA))]
+    (token/p 'CP)
+    [type <- (or/p (do (token/p 'ARROW)
+                     [type <- type/p]
+                     (pure type))
+                   (do void/p (pure #f))
+                   )]
+    (token/p 'OB)
+    [body <- (many/p expression/p)]
+    (token/p 'CB)
+    (pure (ast-function name params type #f))
+    ))
+
+(define top-level-definition/p
+  (or/p definition/p
+        function/p
+        ))
+
+(define boolean-expression/p
+  (or/p (do value/p
+          operator/p
+          value/p)
+        identifier/p
+        ))
+
+(struct ast-if-expression
+  (condition body)
+  #:transparent
+  )
+
+(define if-expression/p
+  (do (token/p 'IF)
+    (token/p 'OP)
+    [condition <- boolean-expression/p]
+    (token/p 'CP)
+    (token/p 'OB)
+    [body <- (many/p expression/p)]
+    (token/p 'CB)
+    (pure (ast-if-expression condition body))
+    ))
+
+(struct ast-for-expression
+  (expr body)
+  #:transparent
+  )
+
+(define for-expression/p
+  (do (token/p 'FOR)
+    (token/p 'OP)
+    [expr <- identifier/p]
+    (token/p 'CP)
+    (token/p 'OB)
+    [body <- (many/p expression/p)]
+    (token/p 'CB)
      
+    (pure (ast-for-expression expr body))
+    ))
+
+(define return-expression/p
+  (do (token/p 'RETURN)
+    [expr <- expression/p]
+    (token/p 'SEMICOLON)
+    ))
+
 
 ; an expression can be a number or a function invokation
 (define expression/p
-  (syntax/p
-   (or/p ;;number/p
-    ;;funcall/p
-    definition/p)))
+  (or/p (try/p funcall/p)
+        (try/p if-expression/p)
+        (try/p for-expression/p)
+        (try/p return-expression/p)
+        (try/p definition/p)
+        (syntax/p number/p)
+        (syntax/p identifier/p)
+        ))
 
 (struct ast-module
   (defs)
@@ -316,7 +421,7 @@
   )
 
 (define body/p
-  (do [defs <- (many/p definition/p)]
+  (do [defs <- (many/p top-level-definition/p)]
     (pure (ast-module defs))
     ))
 
@@ -365,10 +470,11 @@
      ))
 
   (require racket/pretty)
-  (pretty-print
-   (for/list ([str examples])
-     (parse-result! (parse-tokens expression/p (lex-zig-str str)))
-     ))
+  #;(pretty-print
+     (for/list ([str examples])
+       (parse-result! (parse-tokens expression/p (lex-zig-str str)))
+       ))
 
-  (parse-result! (parse-tokens body/p (lex-zig-file "test.z") "test.z"))
+  (pretty-print
+   (parse-result! (parse-tokens body/p (lex-zig-file "test.z") "test.z")))
   )
