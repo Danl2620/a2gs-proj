@@ -177,7 +177,7 @@
    )
   #:methods gen:custom-write
   [(define (write-proc e port mode)
-     (write-string "#<number:" port)
+     (write-string "#<ast-type-number:" port)
      (write-string (or (and (ast-numeric-type-integer? e)
                             (or (and (ast-numeric-type-signed? e) "i")
                                 "u")
