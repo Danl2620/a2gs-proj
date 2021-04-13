@@ -146,8 +146,19 @@
    (or/p (token/p 'INT-LITERAL)
          (token/p 'FLOAT-LITERAL))))
 
+(struct ast-struct-access
+  (names)
+  #:transparent)
+
 (define identifier/p
-  (syntax/p (token/p 'IDENTIFIER)))
+  (or/p
+   (do [names <- (many/p (syntax/p (token/p 'IDENTIFIER))
+                         #:sep (token/p 'DOT)
+                         #:min 2)]
+     (pure (ast-struct-access names))
+     )
+   (syntax/p (token/p 'IDENTIFIER))
+   ))
 
 (define operator/p
   (or/p (token/p '<)
@@ -158,17 +169,19 @@
         ))
 
 
+(struct ast-funcall
+  (name args)
+  #:transparent)
 
 
 ; a simple function invokation
 (define funcall/p
-  (syntax/p
-   (do [func <- identifier/p]
-     (token/p 'OP)
-     [args <- (many/p expression/p #:sep (token/p 'COMMA))]
-     (token/p 'CP)
-     (pure (list* func args))
-     )))
+  (do [func <- identifier/p]
+    (token/p 'OP)
+    [args <- (many/p value/p #:sep (token/p 'COMMA))]
+    (token/p 'CP)
+    (pure (ast-funcall func args))
+    ))
 
 (struct ast-numeric-type
   (signed?
@@ -310,7 +323,7 @@
     ))
 
 (define value/p
-  (or/p (syntax/p number/p)
+  (or/p (try/p (syntax/p number/p))
         (syntax/p identifier/p)
         (syntax/p (token/p 'STRING))
         struct-instance/p
@@ -326,7 +339,10 @@
 (define definition/p
   (do [name <- lhs/p]
     (token/p 'EQUALS)
-    [value <- (or/p expression/p struct/p enum/p union/p value/p)]
+    [value <- (or/p (try/p struct/p)
+                    (try/p enum/p)
+                    (try/p union/p)
+                    value/p)]
     (token/p 'SEMICOLON)
     (pure (ast-definition name value))
     ))
@@ -433,6 +449,8 @@
      "const hexval: i32 = 0xa7a;"
      "const Distance = 12.34;"
      "const one: i32 = 1;"
+     "min(src.size.w, dst.size.w);"
+     "const width = min(src.size.w, dst.size.w);"
      "const str = \"asdf\";"
      "const Point = struct { x: i64, y: f32 };"
      "MPoint = struct { x: i16, y: f32 };"
@@ -466,15 +484,28 @@
    };
    "
 
+     "
+fn blit_row(src: rb, dst: rb, offset: vec2, row: i16) 
+{
+}
+"
    
      ))
+  (parse-tokens identifier/p (lex-zig-str "src.size.w"))
 
+  (parse-tokens funcall/p (lex-zig-str "min(src.size.w, dst.size.w)"))
+  (parse-tokens definition/p (lex-zig-str "const width = min(src.size.w, dst.size.w);"))
+
+  
   (require racket/pretty)
   #;(pretty-print
-     (for/list ([str examples])
-       (parse-result! (parse-tokens expression/p (lex-zig-str str)))
+     (for/list ([(str index) (in-indexed examples)])
+       (parse-result! (parse-tokens expression/p (lex-zig-str str) index))
        ))
 
-  (pretty-print
-   (parse-result! (parse-tokens body/p (lex-zig-file "test.z") "test.z")))
+  #;(let ([path (build-path "/Users/danl/proj/misc/a2gs/proj/a2gs-proj/src" "test.z")])
+      (pretty-print
+       (parse-result! (parse-tokens body/p (lex-zig-file path) path))
+       ))
+    
   )
