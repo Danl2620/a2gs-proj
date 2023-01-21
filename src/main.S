@@ -51,8 +51,8 @@ HOME           equ $00fc58
 COUT           equ $00fded
 KEYIN          equ $00fd1b
 
-               * rel
-               * typ   OMF16
+               ;; rel
+               ;; typ   OMF16
                org $2000
                dsk   main.l
 
