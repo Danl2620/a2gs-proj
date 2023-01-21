@@ -494,7 +494,7 @@ fn blit_row(src: rb, dst: rb, offset: vec2, row: i16)
   (parse-tokens identifier/p (lex-zig-str "src.size.w"))
 
   (parse-tokens funcall/p (lex-zig-str "min(src.size.w, dst.size.w)"))
-  (parse-tokens definition/p (lex-zig-str "const width = min(src.size.w, dst.size.w);"))
+  ;;(parse-tokens definition/p (lex-zig-str "const width = min(src.size.w, dst.size.w);"))
 
   
   (require racket/pretty)

@@ -2,3 +2,7 @@ blankdisk.po filter=lfs diff=lfs merge=lfs -text
 docs/Apple_IIgs_GSOS_internals_v1.pdf filter=lfs diff=lfs merge=lfs -text
 docs/Programmanual.pdf filter=lfs diff=lfs merge=lfs -text
 docs/AppleIIgsHardwareReferenceManual.PDF filter=lfs diff=lfs merge=lfs -text
+bin/merlin filter=lfs diff=lfs merge=lfs -text
+bin/AppleCommander-ac-1.6.0.jar filter=lfs diff=lfs merge=lfs -text
+bin/cadius filter=lfs diff=lfs merge=lfs -text
+images/ProDOS_2_4_2.dsk filter=lfs diff=lfs merge=lfs -text

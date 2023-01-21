@@ -43,8 +43,9 @@ CHAR_CURSOR    equ   #$FF
 COL_LAST       equ   #39
 STATUS_POS     equ $0007ED
 
-               rel
-               typ   OMF16
+               * rel
+               * typ   OMF16
+               org $2000
                dsk   main.l
 
 ; CHARACTER_UNDER_CURSOR DS 1
@@ -329,22 +330,22 @@ drawchar       cpy   #0
 ;;
 
 
-print          ldy   #$01        ;; start 1 past return address
-loop           lda   (1,s),y     ;; get a char to print
-               beq   fix
-               jsr   cout
-               iny
-               bra   loop
+* print          ldy   #$01        ;; start 1 past return address
+* loop           lda   (1,s),y     ;; get a char to print
+*                beq   fix
+*                jsr   cout
+*                iny
+*                bra   loop
 
-fix            sty   len
-               lda   1,s
-               adc   len
-               sta   1,s
+* fix            sty   len
+*                lda   1,s
+*                adc   len
+*                sta   1,s
 
-               lda   2,s
-               adc   #0
-               sta   2,s
-DONE           rts
+*                lda   2,s
+*                adc   #0
+*                sta   2,s
+*                rts
 
 ;;
 ;  do some BCD
