@@ -26,25 +26,29 @@ COLOR_RED			EQU $0F00
 COLOR_GREEN			EQU $00F0
 COLOR_BLUE			EQU $000F
 
+PALSET MAC
+	lda ]1
+	ldx ]2	; palette index
+	jsr SetPaletteColor
+	<<<
 
-	rel	; Compile
+	;;rel	; Compile
+	org $2000
 	dsk SHRHELLO.l	; Save Name
 	mx %00
+
+; ensure 16-bit mode (unnecessary?)
+	clc
+	xce
+    rep   #$30
+
 	phk	; Set Data Bank to Program Bank
 	plb	; Always do this first!
 
 Start
-	lda #COLOR_WHITE
-	ldx #$0000	; palette index $0
-	jsr SetPaletteColor
-
-	lda #COLOR_RED
-	ldx #$0001	; palette index $1
-	jsr SetPaletteColor
-
-	lda #COLOR_GREEN
-	ldx #$000F	; palette index $F
-	jsr SetPaletteColor
+	>>> PALSET,#COLOR_WHITE;#$0000	; palette index $0
+	>>> PALSET,#COLOR_RED;#$0001
+	>>> PALSET,#COLOR_GREEN;#$000F
 
 	lda #$0000
 	jsr SetSCBs	; set all SCBs to 00 (320 mode, pal 0, no fill, no interrupt)

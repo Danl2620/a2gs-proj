@@ -3,8 +3,8 @@
 
 PRODOS_IMAGE=images/ProDOS_2_4_2.dsk
 
-NAME=main
-##NAME=shrhello
+##NAME=main
+NAME=shrhello
 
 DISKNAME=images/projdisk.po
 VOLUMENAME=PROJ
