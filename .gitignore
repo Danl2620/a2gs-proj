@@ -1,5 +1,7 @@
 files/
 images/projdisk.po
+images/bootdisk.po
+*.bin
 *.zip
 merlin_s
 src/*_Output.txt
