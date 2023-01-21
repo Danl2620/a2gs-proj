@@ -10,6 +10,7 @@
 OMF16          equ   $B3
 SPEAKER        equ   $00C030
 PRODOS16       equ   $E100A8
+PRODOS         equ   $BF00       ;; 8bit mode only!
 
 ;; Keyboard IO locations
 KBDDATASTROBE  equ   $00C000
@@ -121,7 +122,7 @@ KEYIN          equ $00fd1b
 ;;
 
 keydown        cmp   KEY_ESCAPE
-               beq   DONE
+               beq   EXIT
                cmp   KEY_UP
                beq   up
                cmp   KEY_DOWN
@@ -138,9 +139,13 @@ keydown        cmp   KEY_ESCAPE
                jsr   drawchar
                jmp   colinc
 
-DONE           jsl   PRODOS16
-               da    $29
-               adrl  QuitParm
+EXIT           jmp   DONE
+
+;;DONE           jsl   PRODOS16
+;;               da    $29
+;;               adrl  QuitParm
+
+
 
 Error          brk
 
@@ -369,3 +374,18 @@ tencount       ldx   #0
 :subout        rts
 
                jsl   PRODOS16
+
+
+;; back to 8 bit mode (must be last section of file)
+
+DONE           sep #$30  ; set the M bit in the P register to put the processor into 8-bit mode
+
+               JSR  PRODOS        ;Call the MLI ($BF00)
+               DFB  $65           ;CALL TYPE = QUIT
+               DW   PARMTABLE     ;Pointer to parameter table
+
+PARMTABLE      DFB  4             ;Number of parameters is 4
+               DFB  0             ;0 is the only quit type
+               DW   0000          ;Pointer reserved for future use
+               DFB  0             ;Byte reserved for future use
+               DW   0000          ;Pointer reserved for future use
