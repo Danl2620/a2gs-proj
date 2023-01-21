@@ -18,7 +18,9 @@ KBDDOWNCLEAR   equ   $00C010
 ;; Display soft switches; they don't take any values. some are only triggered
 ;; by writes, TXTPAGE1 can be triggered by a read
 CLR80COL       equ   $00C000        ; disable 80 column store?
+SET80COL       equ   $00C001
 CLR80VID       equ   $00C00C        ; disable 80 column hardware?!
+SET80VID       equ   $00C00D        ; enable 80 column hardware?!
 TXTCLR         equ   $00C050        ; set standard apple ii gfx mode
 TXTSET         equ   $00C051        ; select text mode only. "only"?
 TXTPAGE1       equ   $00C054        ; select text page 1 (there are 2)
@@ -43,6 +45,12 @@ CHAR_CURSOR    equ   #$FF
 COL_LAST       equ   #39
 STATUS_POS     equ $0007ED
 
+;; firmware routines
+INIT           equ $00fb2f
+HOME           equ $00fc58
+COUT           equ $00fded
+KEYIN          equ $00fd1b
+
                * rel
                * typ   OMF16
                org $2000
@@ -63,11 +71,11 @@ STATUS_POS     equ $0007ED
 
 ; toggle the display soft switches
 
-                                    ;; disable 80 column mode
+               ;; disable 80 column mode
                stal  CLR80COL
                stal  CLR80VID
 
-                                    ;; set Apple II page 1 lores text mode
+               ;; set Apple II page 1 lores text mode
                stal  TXTCLR
                stal  TXTSET
                ldal  TXTPAGE1
@@ -94,12 +102,12 @@ STATUS_POS     equ $0007ED
                bmi   :kjump
 
                ;; blink a cursor
-            ;;    sta >CHARACTER_UNDER_CURSOR
-            ;;    lda CHAR_BLOCK
-            ;;    jsr drawchar
+                ;;sta >CHARACTER_UNDER_CURSOR
+                ;;lda CHAR_BLOCK
+                ;;jsr drawchar
 
-            ;;    lda >CHARACTER_UNDER_CURSOR
-            ;;    jsr drawchar
+               ;;  lda >CHARACTER_UNDER_CURSOR
+               ;;  jsr drawchar
 
                jmp   :kloop
 
