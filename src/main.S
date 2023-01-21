@@ -103,8 +103,8 @@ KEYIN          equ $00fd1b
 
                ;; blink a cursor
                 ;;sta >CHARACTER_UNDER_CURSOR
-                ;;lda CHAR_BLOCK
-                ;;jsr drawchar
+               lda CHAR_BLOCK
+               jsr drawchar
 
                ;;  lda >CHARACTER_UNDER_CURSOR
                ;;  jsr drawchar
