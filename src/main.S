@@ -86,6 +86,17 @@ KEYIN          equ $00fd1b
                rep   #$30
                sep   #$20
 
+
+;; START OF PROGRAM
+
+;; main loop
+;;  every 1ms do
+;;    draw cursor
+;;    check for keypress
+;;    if changes, update status bar
+;;
+
+
 ; show the current char on screen
 ; read keyboard then hit strobe to reset
                ldx   #0
